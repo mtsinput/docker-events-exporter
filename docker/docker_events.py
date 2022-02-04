@@ -47,9 +47,9 @@ def logstash_port():
 
 def log_to_disk():
     if "LOG_TO_DISK" in environ:
-        return environ["LOG_TO_DISK"]
+        return environ["LOG_TO_DISK"].strip('\"')
     else:
-        return ""
+        return "NO"
 
 def watch_events():
     client = docker.DockerClient(version='auto',
@@ -64,6 +64,7 @@ def watch_events():
             else:
                 log_file.close
                 log_date = '{}'.format(datetime.now().strftime('%Y-%m-%d'))
+                print_timed("logs writing to "+ "/log-events/docker_event_"+log_date+".log")
                 log_file = open("/log-events/docker_event_"+log_date+".log", "a")
                 log_file.write('{} [{}]: {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),'docker_events',event))
                 log_file.write('\n')
@@ -119,7 +120,10 @@ if __name__ == '__main__':
     print_timed('Start prometheus client on port 9990')
     start_http_server(9990, addr='0.0.0.0')
     if log_to_disk().upper() == "TRUE" or log_to_disk().upper() == "YES":
+        print_timed("logs writing to "+ "/log-events/docker_event_"+log_date+".log")
         log_file = open("/log-events/docker_event_"+log_date+".log", "a")
+    else:
+        print_timed("logs will not be writing...")
     try:
         print_timed('Watch docker events')
         watch_events()
