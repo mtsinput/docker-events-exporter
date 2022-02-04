@@ -23,6 +23,8 @@ EVENTS = Counter('docker_events',
                  'Docker events',
                  ['event', 'pod', 'env', 'exitcode', 'signal'])
 
+log_date = '{}'.format(datetime.now().strftime('%Y-%m-%d'))
+
 
 def print_timed(msg):
     to_print = '{} [{}]: {}'.format(
@@ -44,8 +46,8 @@ def logstash_port():
         return ""
 
 def log_to_disk():
-    if "LOGTODISK" in environ:
-        return environ["LOGTODISK"]
+    if "LOG_TO_DISK" in environ:
+        return environ["LOG_TO_DISK"]
     else:
         return ""
 
@@ -55,8 +57,16 @@ def watch_events():
     for event in client.events(decode=True):
         attributes = event['Actor']['Attributes']
         if log_to_disk().upper() == "TRUE" or log_to_disk().upper() == "YES":
-            log_file.write('{} [{}]: {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),'docker_events',event))
-            log_file.write('\n')
+            global log_date, log_file
+            if log_date == '{}'.format(datetime.now().strftime('%Y-%m-%d')):
+                log_file.write('{} [{}]: {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),'docker_events',event))
+                log_file.write('\n')
+            else:
+                log_file.close
+                log_date = '{}'.format(datetime.now().strftime('%Y-%m-%d'))
+                log_file = open("/log-events/docker_event_"+log_date+".log", "a")
+                log_file.write('{} [{}]: {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),'docker_events',event))
+                log_file.write('\n')
 
         #print_timed(event)
         if event['Type'] == 'network':
@@ -109,7 +119,7 @@ if __name__ == '__main__':
     print_timed('Start prometheus client on port 9990')
     start_http_server(9990, addr='0.0.0.0')
     if log_to_disk().upper() == "TRUE" or log_to_disk().upper() == "YES":
-        log_file = open("/log-events/docker_event.log", "a")
+        log_file = open("/log-events/docker_event_"+log_date+".log", "a")
     try:
         print_timed('Watch docker events')
         watch_events()
