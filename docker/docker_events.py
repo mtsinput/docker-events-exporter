@@ -78,13 +78,17 @@ def watch_events():
         signal = ''
         if 'signal' in attributes:
             signal =  attributes['signal']
+        if 'status' in event:
+            event_status = event['status'].strip()
+        else:
+            event_status = ""
         if 'com.docker.swarm.task.id' in attributes:
         #    if attributes['io.kubernetes.container.name'] == 'POD':
         #        continue
         #    if event['status'].startswith(('exec_create', 'exec_detach')):
         #        continue
             msg = '{} on {} ({}) {} ({})'.format(
-                event['status'].strip(),
+                event_status,
                 attributes['com.docker.swarm.task.name'],
                 exit_code,
                 signal,
@@ -95,14 +99,14 @@ def watch_events():
         #        pod = attributes['io.kubernetes.pod.name']
             if 'status' in attributes:
                 pod = attributes['com.docker.swarm.task.name']
-            EVENTS.labels(event=event['status'].strip(),
+            EVENTS.labels(event=event_status,
                           pod=pod,
                           exitcode=exit_code,
                           signal=signal,
                           env=attributes['com.docker.stack.namespace']).inc()
         if 'image' and 'name' in attributes:
             msg = '{} on {} ({}) {}'.format(
-                event['status'].strip(),
+                event_status,
                 attributes['name'],
                 exit_code,
                 signal)
@@ -110,7 +114,7 @@ def watch_events():
             pod = attributes['name']
         #    if event['status'] == 'oom':
         #        pod = attributes['io.kubernetes.pod.name']
-            EVENTS.labels(event=event['status'].strip(),
+            EVENTS.labels(event=event_status,
                           pod=pod,
                           exitcode=exit_code,
                           signal=signal,
