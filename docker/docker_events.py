@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from datetime import datetime
-from os import environ
+import os
 import docker
 from prometheus_client import start_http_server, Counter
 
@@ -34,22 +34,34 @@ def print_timed(msg):
     print(to_print)
 
 def logstash_addr():
-    if "LOGSTASH_ADDR" in environ:
-        return environ["LOGSTASH_ADDR"]
+    if "LOGSTASH_ADDR" in os.environ:
+        return os.environ["LOGSTASH_ADDR"]
     else:
         return ""
 
 def logstash_port():
-    if "LOGSTASH_PORT" in environ:
-        return environ["LOGSTASH_PORT"]
+    if "LOGSTASH_PORT" in os.environ:
+        return os.environ["LOGSTASH_PORT"]
     else:
         return ""
 
 def log_to_disk():
-    if "LOG_TO_DISK" in environ:
-        return environ["LOG_TO_DISK"].strip('\"')
+    if "LOG_TO_DISK" in os.environ:
+        return os.environ["LOG_TO_DISK"].strip('\"')
     else:
         return "NO"
+
+def days_to_store():
+    if "DAYS_TO_STORE" in os.environ:
+        return int(os.environ["DAYS_TO_STORE"].strip('\"'))
+    else:
+        return 15
+
+def delete_old_logs():
+    list_of_logs = os.listdir('/log-events')
+    if len(list_of_logs) > days_to_store():
+        oldest_file = min(list_of_logs, key=os.path.getctime)
+        os.remove(os.path.abspath(oldest_file))
 
 def watch_events():
     client = docker.DockerClient(version='auto',
@@ -68,6 +80,7 @@ def watch_events():
                 log_file = open("/log-events/docker_event_"+log_date+".log", "a")
                 log_file.write('{} [{}]: {}'.format(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),'docker_events',event))
                 log_file.write('\n')
+                delete_old_logs()
 
         #print_timed(event)
         if event['Type'] == 'network':
@@ -81,7 +94,7 @@ def watch_events():
         if 'status' in event:
             event_status = event['status'].strip()
         else:
-            event_status = ""
+            event_status = "-"
         if 'com.docker.swarm.task.id' in attributes:
         #    if attributes['io.kubernetes.container.name'] == 'POD':
         #        continue
