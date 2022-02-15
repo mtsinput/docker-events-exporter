@@ -21,9 +21,10 @@ from prometheus_client import start_http_server, Counter
 APP_NAME = "Docker events prometheus exporter"
 EVENTS = Counter('docker_events',
                  'Docker events',
-                 ['event', 'pod', 'env', 'exitcode', 'signal'])
+                 ['host', 'event', 'pod', 'env', 'exitcode', 'signal'])
 
 log_date = '{}'.format(datetime.now().strftime('%Y-%m-%d'))
+thishost = os.uname()[1]
 
 
 def print_timed(msg):
@@ -112,7 +113,8 @@ def watch_events():
         #        pod = attributes['io.kubernetes.pod.name']
             if 'status' in attributes:
                 pod = attributes['com.docker.swarm.task.name']
-            EVENTS.labels(event=event_status,
+            EVENTS.labels(host=thishost,
+                          event=event_status,
                           pod=pod,
                           exitcode=exit_code,
                           signal=signal,
@@ -127,17 +129,18 @@ def watch_events():
             pod = attributes['name']
         #    if event['status'] == 'oom':
         #        pod = attributes['io.kubernetes.pod.name']
-            EVENTS.labels(event=event_status,
+            EVENTS.labels(host=thishost,
+                          event=event_status,
                           pod=pod,
                           exitcode=exit_code,
                           signal=signal,
                           env='').inc()
 
 if __name__ == '__main__':
-    print_timed('Start prometheus client on port 9990')
+    print_timed('Start prometheus client on '+thishost+' port 9990')
     start_http_server(9990, addr='0.0.0.0')
     if log_to_disk().upper() == "TRUE" or log_to_disk().upper() == "YES":
-        print_timed("logs writing to "+ "/log-events/docker_event_"+log_date+".log")
+        print_timed("logs writing to "+"/log-events/docker_event_"+log_date+".log")
         log_file = open("/log-events/docker_event_"+log_date+".log", "a")
     else:
         print_timed("logs will not be writing...")
