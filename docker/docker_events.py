@@ -59,6 +59,7 @@ def days_to_store():
         return 15
 
 def delete_old_logs():
+    os.chdir('/log-events')
     list_of_logs = os.listdir('/log-events')
     if len(list_of_logs) > days_to_store():
         oldest_file = min(list_of_logs, key=os.path.getctime)
