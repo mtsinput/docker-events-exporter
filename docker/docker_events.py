@@ -63,6 +63,8 @@ def delete_old_logs():
     list_of_logs = os.listdir('/log-events')
     if len(list_of_logs) > days_to_store():
         oldest_file = min(list_of_logs, key=os.path.getctime)
+        print_timed("Delete old logs file:" +
+                    " /log-events/"+oldest_file)
         os.remove(os.path.abspath(oldest_file))
 
 def watch_events():
