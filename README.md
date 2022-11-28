@@ -14,7 +14,7 @@ networks:
 
 services:
   events_exporter:
-    image: wdmaster/docker-events-exporter:1.0.6
+    image: wdmaster/docker-events-exporter:1.0.7
     hostname: "monitoring"
     container_name: events_exporter
     ports:
